@@ -1,0 +1,18 @@
+Package: PFExpTools
+Type: Package
+Title: Tools for analysis of Plasmodium falciparum gene expression data
+Version: 0.1.0
+Imports: 
+    bnstruct,
+    stringr
+Author: Gabe Foster<foster.gabe@gmail.com>
+Maintainer: Gabe Foster<foster.gabe@gmail.com>
+Description: This package contains a large number of miscellaneous functions for the processing and analysis of Plasmodium falciparum gene expression data. This functionality is largely for use on transcriptional time courses; however, there is quite a bit of functionality for single time point studies as well. This contains the necessary code to determine transcriptional staging to a reference time course, and generate cyclical regression covariates for further analysis. This package encompasses multiple workflows. One is the processing, imputation and smoothing of transcriptional time courses, and the other is the processing, staging and covariate generation for single time point transcriptional analysis.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.0
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
