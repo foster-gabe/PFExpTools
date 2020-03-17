@@ -2,9 +2,11 @@
 
 export(CRCgeneration)
 export(fftimpute)
+export(flattenAlias)
 export(getAverages)
 export(lSmooth)
 export(logtransform)
+export(nameChange)
 export(peakPhase)
 export(remLowCoverage)
 export(splineCourse)
