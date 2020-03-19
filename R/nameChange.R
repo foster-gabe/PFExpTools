@@ -1,48 +1,83 @@
 
 #' nameChange
 #'
-#' This function takes a platform file from GEO (a cut and paste from the full
-#' table view, really), and identifies the new genome assembly name for each
-#' probe using one of a few methods. This function is a wrapper for subfunctions
-#' that carry out each method.
-#'
-#' @param platform This is the filename for the platform from GEO. A simple
-#'   cut/paste in to a txt file will work here (it's tab delimited by default).
+#' This function takes a platform or a file from GEO (a cut and paste from the
+#' full table view, really), and identifies the new genome assembly name for
+#' each probe using one of a few methods. This function is a wrapper for
+#' subfunctions that carry out each method. Now, there's little consistency to
+#' the way the files are organized on GEO- platform naming conventions are loose
+#' to non-existant, so you'll have to go have a look at the platform manually
+#' and make some decisions on what method will work best. This function will use
+#' the working directory as a storage unit for any files downloaded from
+#' PlasmoDB and any BLAST databases built for this process.
+#' @param platform This can be a platform accession number OR a filename for a
+#'   platform. If a file, a simple cut/paste in to a txt file will work here
+#'   (it's tab delimited by default).
+#' @param platcols This one is a bit complex so settle in. This must be a vector
+#'   with a length of two. The first entry is the column name for the
+#'   probe/feature name. This can be ID, GeneID, ProbeID, it's completely
+#'   inconsistent among platforms and you need to manually determine this. The
+#'   second entry depends on method. For "swap", it is the column representing
+#'   GeneDB version 3 gene identifiers (if present). For the "alias" file, it
+#'   must be the old GeneDB gene identifier. For the "blast" method, it must be
+#'   the probe sequence.
 #' @param method There are 3 methods here; "swap" just takes the new gene name
 #'   from the platform file (least accurate), "alias" will find new names based
 #'   on the current PlasmoDB assembly file (not bad), "blast" will take a
 #'   provided Annotated Transcripts file from PlasmoDB, blast each probe against
 #'   it, and only keep probes that meet the bitscore criteria (default is 130
-#'   for perfect hit and 60 for minimal secondary hits).
-#' @param aliases This is the flat alias file created by the function
-#'   "flattenAlias"; only necessary if selected method is "alias".
+#'   for perfect hit and 60 for minimal secondary hits- this is based on probe
+#'   length, and you may want to research bit scores for the platform in
+#'   question).
+#' @param aliases This is the filename of the "alias" file downloaded from
+#'   PlasmoDB. Alternately, if you're feeling spectacularly lazy, you can set
+#'   this to 'current' and the function will do all the heavy lifting for you.
 #' @param transcripts The fasta file containing the annotated transcripts; this
-#'   can be obtained from PlasmoDB.
+#'   can be obtained from PlasmoDB. Alternately, if you're feeling spectacularly
+#'   lazy, you can set this to 'current' and the function will do all the heavy
+#'   lifting for you.
 #' @param match The bitscore for a perfect primary match; only necessary if
 #'   "blast" is selected, default is 130.
 #' @param secmatch The maxmium bitscore for secondary probe alignments; only
 #'   necessary if "blast is selected, default is 60.
 #'
-#' @return
+#' @return This returns a data frame with two columns; first column is the
+#'   original IDs, and second column is the corresponding new ID.
 #' @export
 #'
 #' @examples
-nameChange <- function(platform, method = "swap", aliases = NA, transcripts = NA, match = 130, secmatch = 60){
+nameChange <- function(platform, platcols = c(1,2), method = "swap", aliases = NA, transcripts = NA, match = 130, secmatch = 60){
+
   #read and curate platform
-  suppressWarnings(platdata <- read.table(platform, skip = which.max(count.fields(platform)) - 1, sep = "\t",header = T, stringsAsFactors = F))
-  #Remove blank row(s)
-  platdata <- platdata[which(grepl("[a-zA-Z0-9]", platdata[,1])),]
+  #if it's a text file, read it
+  if(grepl(".txt", platform)){
+    suppressWarnings(platdata <- read.table(platform, skip = which.max(count.fields(platform)) - 1,
+                                             sep = "\t",header = T, stringsAsFactors = F))
+    #Remove blank row(s)
+    platdata <- platdata[which(grepl("[a-zA-Z0-9]", platdata[,1])),]
+    #if it's a call to a GEO platform...
+  } else {
+    rawplat <- GEOquery::getGEO(platform, destdir = getwd())
+
+    platdata <- as(GEOquery::Table(rawplat), "data.frame")
+
+  }
 
   #Farm out to sub functions by method, catch obvious errors
   if(method == "swap"){
-    output <- swapChange(platdata)
+    if(!("ORF" %in% colnames(platdata))){stop("No ORF in platform file, this method won't work")}
+    subplat <- platdata[,c(platcols[1], platcols[2])]
+    output <- swapChange(subplat)
   } else if(method == "alias"){
     if(!all(is.na(aliases))){
-      output <- aliasChange(platdata, aliases)
+      subplat <- platdata[,c(platcols[1], platcols[2])]
+      output <- aliasChange(subplat, aliases)
     }else{stop("No alias file provided for method alias")}
   }else if(method == "blast"){
     if(!is.na(transcripts)){
-      output <- blastChange(platdata, platform, transcripts, match, secmatch)
+      if(!("SEQUENCE" %in% colnames(platdata))){stop("No sequence data in platform, this method won't work")}
+      subplat <- platdata[,c(platcols[1], platcols[2])]
+      output <- blastChange(subplat, platform, transcripts, match, secmatch)
     }else{stop("No transcript file provided for method blast")}
   }else{stop("Invalid method provided, only supported methods are swap, alias and blast")}
 
@@ -68,7 +103,19 @@ aliasChange <- function(platdata, aliases){
   #remove probes with no gene name
   output <- output[which(nchar(output[,2]) > 1),]
 
+  #if the user is lazy, this will download the most recent alias file to the
+  #working directory
+  if(aliases == "current"){
+    location <- "https://plasmodb.org/common/downloads/Current_Release/Pfalciparum3D7/txt/"
+    page <- httr::GET(location)
+    page <- httr::content(page, "text")
+    filename <- regmatches(page, regexpr("PlasmoDB-[0-9]{2}_Pfalciparum3D7_GeneAliases\\.txt", page))
+    GET(paste(location, filename, sep = ""), write_disk(filename, overwrite=TRUE))
+    aliases <- filename
+  }
+
   #create named vector from aliases for easy lookup
+  aliases <- flattenAlias(aliases)
   aliasvector <- aliases[,2]
   names(aliasvector) <- aliases[,1]
   #Perform lookup
@@ -119,6 +166,17 @@ swapChange <- function(platdata){
 #'
 #' @examples
 blastChange <- function(platdata, platform, transcripts, match, secmatch){
+
+  if(transcripts == "current"){
+    location <- "https://plasmodb.org/common/downloads/Current_Release/Pfalciparum3D7/fasta/data/"
+    page <- httr::GET(location)
+    page <- httr::content(page, "text")
+    filename <- regmatches(page, regexpr("PlasmoDB-[0-9]{2}_Pfalciparum3D7_AnnotatedTranscripts\\.fasta", page))
+    GET(paste(location, filename, sep = ""), write_disk(filename, overwrite=TRUE))
+    transcripts <- filename
+  }
+
+
   #make blast database
   system2(command = "makeblastdb", args = c("-in", transcripts, "-dbtype nucl"))
 
@@ -170,18 +228,20 @@ blastChange <- function(platdata, platform, transcripts, match, secmatch){
 #' flattenAlias
 #'
 #' The alias file from PlasmoDB is unwieldy and awful. Here is a function for
-#' flattening it for easier find and replace.
+#' flattening it for easier find and replace. Called in aliasChange, you don't
+#' need to use this for anything.
 #'
 #' @param aliasfilename File name of alias file obtained from PlasmoDB.
 #'
 #' @return Data frame with two columns; first column is old identifiers, and
 #'   second column is their mapping to the most recent name (per the alias file)
-#' @export
+#'
 #'
 #' @examples
 flattenAlias <- function(aliasfilename){
   #file is \t delim, with uneven numbers of columns which is a joy. We'll create
   #a reverse flattened file here.
+
   aliases <- read.delim(aliasfilename, sep = " ", stringsAsFactors = F, header = F)
   output <- as.data.frame(matrix(nrow = 1, ncol = 2))
   for(i in 1:nrow(aliases)){

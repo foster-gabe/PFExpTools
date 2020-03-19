@@ -15,5 +15,6 @@ Data frame with two columns; first column is old identifiers, and
 }
 \description{
 The alias file from PlasmoDB is unwieldy and awful. Here is a function for
-flattening it for easier find and replace.
+flattening it for easier find and replace. Called in aliasChange, you don't
+need to use this for anything.
 }

@@ -3,7 +3,6 @@
 export(CRCgeneration)
 export(curateExpdata)
 export(fftimpute)
-export(flattenAlias)
 export(getAverages)
 export(lSmooth)
 export(logtransform)

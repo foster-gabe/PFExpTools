@@ -6,6 +6,7 @@
 \usage{
 nameChange(
   platform,
+  platcols = c(1, 2),
   method = "swap",
   aliases = NA,
   transcripts = NA,
@@ -14,21 +15,36 @@ nameChange(
 )
 }
 \arguments{
-\item{platform}{This is the filename for the platform from GEO. A simple
-cut/paste in to a txt file will work here (it's tab delimited by default).}
+\item{platform}{This can be a platform accession number OR a filename for a
+platform. If a file, a simple cut/paste in to a txt file will work here
+(it's tab delimited by default).}
+
+\item{platcols}{This one is a bit complex so settle in. This must be a vector
+with a length of two. The first entry is the column name for the
+probe/feature name. This can be ID, GeneID, ProbeID, it's completely
+inconsistent among platforms and you need to manually determine this. The
+second entry depends on method. For "swap", it is the column representing
+GeneDB version 3 gene identifiers (if present). For the "alias" file, it
+must be the old GeneDB gene identifier. For the "blast" method, it must be
+the probe sequence.}
 
 \item{method}{There are 3 methods here; "swap" just takes the new gene name
 from the platform file (least accurate), "alias" will find new names based
 on the current PlasmoDB assembly file (not bad), "blast" will take a
 provided Annotated Transcripts file from PlasmoDB, blast each probe against
 it, and only keep probes that meet the bitscore criteria (default is 130
-for perfect hit and 60 for minimal secondary hits).}
+for perfect hit and 60 for minimal secondary hits- this is based on probe
+length, and you may want to research bit scores for the platform in
+question).}
 
-\item{aliases}{This is the flat alias file created by the function
-"flattenAlias"; only necessary if selected method is "alias".}
+\item{aliases}{This is the filename of the "alias" file downloaded from
+PlasmoDB. Alternately, if you're feeling spectacularly lazy, you can set
+this to 'current' and the function will do all the heavy lifting for you.}
 
 \item{transcripts}{The fasta file containing the annotated transcripts; this
-can be obtained from PlasmoDB.}
+can be obtained from PlasmoDB. Alternately, if you're feeling spectacularly
+lazy, you can set this to 'current' and the function will do all the heavy
+lifting for you.}
 
 \item{match}{The bitscore for a perfect primary match; only necessary if
 "blast" is selected, default is 130.}
@@ -37,11 +53,17 @@ can be obtained from PlasmoDB.}
 necessary if "blast is selected, default is 60.}
 }
 \value{
-
+This returns a data frame with two columns; first column is the
+  original IDs, and second column is the corresponding new ID.
 }
 \description{
-This function takes a platform file from GEO (a cut and paste from the full
-table view, really), and identifies the new genome assembly name for each
-probe using one of a few methods. This function is a wrapper for subfunctions
-that carry out each method.
+This function takes a platform or a file from GEO (a cut and paste from the
+full table view, really), and identifies the new genome assembly name for
+each probe using one of a few methods. This function is a wrapper for
+subfunctions that carry out each method. Now, there's little consistency to
+the way the files are organized on GEO- platform naming conventions are loose
+to non-existant, so you'll have to go have a look at the platform manually
+and make some decisions on what method will work best. This function will use
+the working directory as a storage unit for any files downloaded from
+PlasmoDB and any BLAST databases built for this process.
 }

@@ -15,19 +15,21 @@
 #' @param pct This is the cutoff for gene data; if a gene has expression values
 #'   for less than this percentage of samples, it is excluded.
 #'
-#' @return Returns an expression frame containing genes as rows and samples as columns.
+#' @return Returns an expression frame containing genes as rows and samples as
+#'   columns.
 #' @export
 #' @importFrom magrittr %>%
 #' @examples
+#'
 curateExpdata <- function(expname, namelist, local = T, pct = 0.75){
 
   #read and curate platform
 
   if(local == T){expdata <- GEOquery::getGEO(file = expfile)
-  }else{expdata <- GEOquery::getGEO(GEO = expname)}
+  }else{expdata <- GEOquery::getGEO(GEO = expname, destdir = getwd())}
 
   #pull expression matrix
-  expdata <- Biobase::exprs(expdata)
+  expdata <- Biobase::exprs(expdata[[1]])
 
   #make name matrix
   names <- as.data.frame(rownames(expdata), stringsAsFactors = F)
@@ -52,8 +54,10 @@ curateExpdata <- function(expname, namelist, local = T, pct = 0.75){
   expdata[,3:ncol(expdata)] <- sapply(expdata[,3:ncol(expdata)], function(x) as.numeric(x))
 
   #average value for all probes per gene
-  output <- expdata %>% dplyr::group_by(expdata$V2) %>% dplyr::summarize_all(mean, na.rm=TRUE)
+  suppressWarnings(output <- expdata %>% dplyr::group_by(expdata$V2) %>%
+                     dplyr::summarize_all(mean, na.rm=TRUE))
   output <- as.data.frame(output)
+
   #set row names, remove blank rows, export
   rownames(output) <- output[,1]
   output <- output[,-(1:3)]
