@@ -91,15 +91,16 @@ nameChange <- function(platform, platcols = c(1,2), method = "swap", aliases = N
 #'
 #' @param platdata see nameChange
 #' @param aliases see nameChange
+#' @param platcols see nameChange
 #'
 #' @return see nameChange
 #'
 #' @examples
 aliasChange <- function(platdata, aliases){
 
-  #pull probe ID and old gene name
-  output <- platdata[,c("ID", "ORF_old")]
-
+  ##pull probe ID and old gene name
+  #output <- platdata[,c(1,2)]
+  output <- platdata
   #remove probes with no gene name
   output <- output[which(nchar(output[,2]) > 1),]
 
@@ -110,7 +111,7 @@ aliasChange <- function(platdata, aliases){
     page <- httr::GET(location)
     page <- httr::content(page, "text")
     filename <- regmatches(page, regexpr("PlasmoDB-[0-9]{2}_Pfalciparum3D7_GeneAliases\\.txt", page))
-    GET(paste(location, filename, sep = ""), write_disk(filename, overwrite=TRUE))
+    httr::GET(paste(location, filename, sep = ""), httr::write_disk(filename, overwrite=TRUE))
     aliases <- filename
   }
 
@@ -142,7 +143,7 @@ aliasChange <- function(platdata, aliases){
 #' @examples
 swapChange <- function(platdata){
 
-  output <- platdata[,c("ID", "ORF")]
+  output <- platdata
   colnames(output) <- c("Probe", "GeneID")
   output <- output[which(grepl("[a-zA-Z0-9]", output[,2])),]
   output
@@ -172,7 +173,7 @@ blastChange <- function(platdata, platform, transcripts, match, secmatch){
     page <- httr::GET(location)
     page <- httr::content(page, "text")
     filename <- regmatches(page, regexpr("PlasmoDB-[0-9]{2}_Pfalciparum3D7_AnnotatedTranscripts\\.fasta", page))
-    GET(paste(location, filename, sep = ""), write_disk(filename, overwrite=TRUE))
+    httr::GET(paste(location, filename, sep = ""), httr::write_disk(filename, overwrite=TRUE))
     transcripts <- filename
   }
 

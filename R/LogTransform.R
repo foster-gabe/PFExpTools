@@ -8,13 +8,13 @@
 #' @export
 #'
 #' @examples
-logtransform <- function(newdata,refavg){
+LogTransform <- function(newdata,refavg){
   #sort data and reference averages
-  newdata <- newdata[order(rownames(newdata)),]
-  refavg <- as.matrix(refavg[order(rownames(refavg)),])
-
 
   if(!isTRUE(all.equal(rownames(newdata), rownames(refavg)))){stop("Gene names do not match")}
+
+  newdata <- newdata[order(rownames(newdata)),]
+  refavg <- as.matrix(refavg[order(rownames(refavg)),])
 
   for (i in 1:nrow(newdata)){
     for (j in 1:ncol(newdata)){

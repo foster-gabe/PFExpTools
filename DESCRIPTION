@@ -1,7 +1,7 @@
 Package: PFExpTools
 Type: Package
 Title: Tools for analysis of Plasmodium falciparum gene expression data
-Version: 0.2.0
+Version: 1.0.0
 Imports: 
     Biobase,
     bnstruct,

@@ -14,22 +14,25 @@
 #'   attempts to download the data.
 #' @param pct This is the cutoff for gene data; if a gene has expression values
 #'   for less than this percentage of samples, it is excluded.
+#' @param pullmeta This allows you to get the metadata for the samples from the
+#'   GSE file; default is false.
 #'
 #' @return Returns an expression frame containing genes as rows and samples as
-#'   columns.
+#'   columns. If pullmeta = T, will be a list with the first entry being the
+#'   expression frame and the second being the metadata from a GSE file.
 #' @export
 #' @importFrom magrittr %>%
 #' @examples
 #'
-curateExpdata <- function(expname, namelist, local = T, pct = 0.75){
+curateExpdata <- function(expname, namelist, local = F, pct = 0.8, pullmeta = F){
 
   #read and curate platform
 
-  if(local == T){expdata <- GEOquery::getGEO(file = expfile)
-  }else{expdata <- GEOquery::getGEO(GEO = expname, destdir = getwd())}
+  if(local == T){alldata <- GEOquery::getGEO(file = expname)
+  }else{alldata <- GEOquery::getGEO(GEO = expname, destdir = getwd())}
 
   #pull expression matrix
-  expdata <- Biobase::exprs(expdata[[1]])
+  expdata <- Biobase::exprs(alldata[[1]])
 
   #make name matrix
   names <- as.data.frame(rownames(expdata), stringsAsFactors = F)
@@ -66,7 +69,17 @@ curateExpdata <- function(expname, namelist, local = T, pct = 0.75){
   output$coverage <- apply(output, 1, function(x) {sum(!is.na(x))/ncol(output)})
   output <- output[which(output$coverage >= pct),]
   output$coverage <- NULL
-  output
+
+  #If metadata is wanted, pull metadata and make list
+  if(pullmeta == T){
+    metadata <- Biobase::pData(Biobase::phenoData(alldata[[1]]))
+    newout <- list()
+    newout[[1]] <- output
+    newout[[2]] <- metadata
+    output <- newout
+  }
+
+ output
 
 }
 

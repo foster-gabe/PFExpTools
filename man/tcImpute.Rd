@@ -4,7 +4,7 @@
 \alias{tcImpute}
 \title{tcImpute}
 \usage{
-tcImpute(expdata, neighbors)
+tcImpute(expdata, neighbors = 5)
 }
 \arguments{
 \item{expdata}{This is an expression matrix with rows as genes and columns as samples in a time course. Time points missing data should be inserted as columns in the correct place containing NAs.}

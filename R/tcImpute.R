@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-tcImpute <- function(expdata, neighbors){
+tcImpute <- function(expdata, neighbors = 5){
 
   texpdata <- t(expdata)
   imputedata <- as.matrix(bnstruct::knn.impute(texpdata, k=neighbors))

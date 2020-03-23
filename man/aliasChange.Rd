@@ -10,6 +10,8 @@ aliasChange(platdata, aliases)
 \item{platdata}{see nameChange}
 
 \item{aliases}{see nameChange}
+
+\item{platcols}{see nameChange}
 }
 \value{
 see nameChange
