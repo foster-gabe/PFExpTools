@@ -34,8 +34,8 @@ stagingByTranscription <- function(samples, reference, subset = NA, cortable = F
   if(!is.na(subset)){commongenes <- intersect(commongenes, subset)}
 
   #reduce all sets to common genes
-  samples <- samples[which(rownames(samples) %in% commongenes),]
-  reference <- reference[which(rownames(reference) %in% commongenes),]
+  samples <-  samples <- samples[match(commongenes,rownames(samples)),]
+  reference <- reference <- reference[match(commongenes,rownames(reference)),]
 
   correlations <- cor(data.matrix(samples), data.matrix(reference), use="pairwise.complete.obs", method=c("pearson"))
 
