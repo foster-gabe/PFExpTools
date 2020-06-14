@@ -4,7 +4,6 @@ Title: Tools for analysis of Plasmodium falciparum gene expression data
 Version: 1.0.0
 Imports: 
     Biobase,
-    bnstruct,
     dplyr,
     GEOquery,
     httr,
